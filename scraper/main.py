@@ -220,17 +220,29 @@ async def scrape_company_jobs(request: JobSearchRequest):
         location_param = request.location.strip() if request.location else None
         country_param = (request.country or "").strip().lower()
 
+        # Clean corporate suffixes and branch words for cleaner matching
+        clean_name = re.sub(r'\b(pvt|ltd|limited|inc|corp|llc|branch|pk)\b', '', company_name, flags=re.IGNORECASE)
+        clean_name = re.sub(r'\s+', ' ', clean_name).strip() or company_name
+
         # Check if country is recognized by Indeed
         supported_indeed = {"usa", "uk", "canada", "australia", "india", "france", "germany", "singapore", "netherlands", "spain", "italy", "mexico", "brazil"}
         country_indeed = country_param if country_param in supported_indeed else "usa"
 
-        sites = request.site_names or ["indeed", "linkedin", "glassdoor", "google"]
+        # If country is not natively supported by Indeed, prioritize LinkedIn and Google Jobs
+        if request.site_names:
+            sites = request.site_names
+        elif country_param in supported_indeed:
+            sites = ["indeed", "linkedin", "google"]
+        else:
+            sites = ["linkedin", "google"]
+
         df = None
 
+        # Pass 1: Try with cleaned company name and location
         try:
             df = scrape_jobs(
                 site_name=sites,
-                search_term=company_name,
+                search_term=clean_name,
                 location=location_param,
                 results_wanted=request.results_wanted or 15,
                 hours_old=request.hours_old or 720,
@@ -238,12 +250,15 @@ async def scrape_company_jobs(request: JobSearchRequest):
                 linkedin_fetch_description=False,
             )
         except Exception:
-            # Resilient fallback to global LinkedIn & Google Jobs without Indeed constraint
+            df = None
+
+        # Pass 2: Fallback without strict location constraint if Pass 1 yielded no results
+        if df is None or df.empty:
             try:
                 df = scrape_jobs(
                     site_name=["linkedin", "google"],
-                    search_term=company_name,
-                    location=location_param,
+                    search_term=clean_name,
+                    location=None,
                     results_wanted=request.results_wanted or 15,
                     hours_old=request.hours_old or 720,
                     linkedin_fetch_description=False,
@@ -263,8 +278,8 @@ async def scrape_company_jobs(request: JobSearchRequest):
 
         for _, row in df.iterrows():
             row_company = str(row.get("company", "") or "").strip()
-            # Resilient company match (direct substring, acronym, token overlap)
-            if is_target_company_match(company_name, row_company):
+            # Resilient company match against original name and clean name
+            if is_target_company_match(company_name, row_company) or is_target_company_match(clean_name, row_company):
                 title = str(row.get("title", "") or "").strip()
                 site = str(row.get("site", "") or "").lower()
                 loc = str(row.get("location", "") or "").strip()

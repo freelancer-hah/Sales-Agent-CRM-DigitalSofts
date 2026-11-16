@@ -1039,9 +1039,21 @@ export const CompanyModal: React.FC<CompanyModalProps> = ({
                 <div className="text-center py-10 bg-card rounded-xl border border-dashed border-border space-y-3">
                   <Briefcase className="w-8 h-8 text-blue-400 mx-auto" />
                   <div>
-                    <h4 className="text-xs font-bold text-text">No Job Postings Scraped Yet</h4>
-                    <p className="text-[11px] text-text-secondary mt-1 max-w-sm mx-auto">
-                      Search LinkedIn, Indeed, Glassdoor, and Google Jobs concurrently using JobSpy to discover what positions this company is paying to recruit.
+                    <h4 className="text-xs font-bold text-text">
+                      {company.jobsScrapedAt ? 'No Open Postings on LinkedIn / Indeed' : 'No Job Postings Scraped Yet'}
+                    </h4>
+                    <p className="text-[11px] text-text-secondary mt-1 max-w-md mx-auto leading-relaxed">
+                      {company.jobsScrapedAt ? (
+                        <>
+                          JobSpy searched LinkedIn, Indeed, Glassdoor, and Google Jobs, but found no active listings for <strong className="text-text">{company.companyName}</strong>.
+                          <br />
+                          <span className="text-[10px] text-muted mt-1 block">
+                            💡 Small local businesses (restaurants, local retail, cafes) typically hire locally via word-of-mouth rather than paying for corporate job boards like LinkedIn. JobSpy is most effective for B2B tech, manufacturing, healthcare, and agencies.
+                          </span>
+                        </>
+                      ) : (
+                        'Search LinkedIn, Indeed, Glassdoor, and Google Jobs concurrently using JobSpy to discover what positions this company is paying to recruit.'
+                      )}
                     </p>
                   </div>
                   {onScrapeJobs && (
@@ -1052,7 +1064,7 @@ export const CompanyModal: React.FC<CompanyModalProps> = ({
                       className="px-3.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors shadow-xs cursor-pointer inline-flex items-center gap-1.5"
                     >
                       <Briefcase className="w-3.5 h-3.5" />
-                      <span>{isScrapingJobs ? 'Searching Job Boards...' : 'Find Jobs via JobSpy'}</span>
+                      <span>{isScrapingJobs ? 'Searching Job Boards...' : company.jobsScrapedAt ? 'Re-check Job Boards' : 'Find Jobs via JobSpy'}</span>
                     </button>
                   )}
                 </div>
