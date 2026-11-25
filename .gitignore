@@ -23,8 +23,6 @@ env.bak/
 venv.bak/
 
 # Environment Variables
-.env
-.env.local
 .env.development.local
 .env.test.local
 .env.production.local
@@ -38,7 +36,6 @@ lerna-debug.log*
 *.log
 
 # IDE and OS
-.vscode/
 .idea/
 *.suo
 *.ntvs*
@@ -54,3 +51,4 @@ scratch/
 scraper/.crawl4ai/
 scraper/test_whitescastle_crawl.py
 
+config.bat

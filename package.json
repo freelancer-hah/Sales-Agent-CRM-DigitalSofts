@@ -4,12 +4,12 @@
   "private": true,
   "description": "AI-Powered Company Lead Generation Agent",
   "scripts": {
-    "dev:backend": "cd backend && npm run dev",
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev:scraper": "python scraper/main.py",
+    "dev:backend": "node init && cd backend && npm run dev",
+    "dev:frontend": "node init && cd frontend && npm run dev",
+    "dev:scraper": "node init && python scraper/main.py",
     "test:backend": "cd backend && npm test",
     "test:scraper": "cd scraper && python test_scraper.py",
-    "build:frontend": "cd frontend && npm run build",
-    "build:backend": "cd backend && npm run build"
+    "build:frontend": "node init && cd frontend && npm run build",
+    "build:backend": "node init && cd backend && npm run build"
   }
 }

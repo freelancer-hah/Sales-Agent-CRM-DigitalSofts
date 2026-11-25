@@ -26,6 +26,8 @@ import {
   Calendar,
   Plus,
   Video,
+  Kanban,
+  List,
 } from 'lucide-react';
 import { api } from '../services/api';
 import { ILeadQualification } from '../types';
@@ -47,6 +49,7 @@ export const QualificationDashboard: React.FC<QualificationDashboardProps> = ({ 
   });
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [activeDetail, setActiveDetail] = useState<{
@@ -600,7 +603,7 @@ export const QualificationDashboard: React.FC<QualificationDashboardProps> = ({ 
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
+      {/* Filter, View Switcher and Search Bar */}
       <div className="bg-card p-4 rounded-2xl border border-border shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Status Tabs */}
         <div className="flex flex-wrap gap-1.5 w-full md:w-auto">
@@ -625,128 +628,273 @@ export const QualificationDashboard: React.FC<QualificationDashboardProps> = ({ 
           ))}
         </div>
 
-        {/* Search Bar */}
-        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full md:w-80">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search company, contact, or email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
+        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+          {/* Kanban / Table View Switcher */}
+          <div className="flex items-center bg-track/70 p-1 rounded-xl border border-border shrink-0">
+            <button
+              type="button"
+              onClick={() => setViewMode('kanban')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                viewMode === 'kanban'
+                  ? 'bg-card text-accent font-bold shadow-xs border border-border'
+                  : 'text-text-secondary hover:text-text'
+              }`}
+            >
+              <Kanban className="w-3.5 h-3.5" />
+              <span>Kanban</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                viewMode === 'table'
+                  ? 'bg-card text-accent font-bold shadow-xs border border-border'
+                  : 'text-text-secondary hover:text-text'
+              }`}
+            >
+              <List className="w-3.5 h-3.5" />
+              <span>Table</span>
+            </button>
           </div>
-          <button
-            type="submit"
-            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition"
-          >
-            Search
-          </button>
-        </form>
+
+          {/* Search Bar */}
+          <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full md:w-64">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search leads..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+          </form>
+        </div>
       </div>
 
-      {/* Qualifications List Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        {loading ? (
-          <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-2">
-            <RefreshCw className="w-6 h-6 animate-spin text-emerald-600" />
-            <p className="text-sm">Loading qualification pipeline...</p>
-          </div>
-        ) : qualifications.length === 0 ? (
-          <div className="py-16 text-center text-slate-500">
-            <UserCheck className="w-10 h-10 mx-auto text-slate-300 mb-2" />
-            <p className="text-sm font-medium">No leads currently match this filter.</p>
-            <p className="text-xs text-slate-400 mt-1">Leads enter qualification upon receiving positive Phase 2 replies or manual enrollment.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3 px-4">Company & Target</th>
-                  <th className="py-3 px-4">Decision Maker</th>
-                  <th className="py-3 px-4">AI Score</th>
-                  <th className="py-3 px-4">AI Recommendation</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Last Activity</th>
-                  <th className="py-3 px-4 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
-                {qualifications.map((q) => {
-                  const company = q.companyId || {};
-                  const contact = q.contactId || {};
-                  return (
-                    <tr
-                      key={q._id}
-                      onClick={() => openLeadDetail(q._id)}
-                      className="hover:bg-slate-50/80 cursor-pointer transition"
-                    >
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-slate-900">{company.companyName || 'Unknown Company'}</div>
-                        <div className="text-[11px] text-slate-500">{company.industry || 'Industry N/A'} &bull; {company.city || company.country || ''}</div>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-medium text-slate-800">{contact.contactName || 'Executive'}</div>
-                        <div className="text-[11px] text-slate-500">{contact.jobTitle || 'Decision Maker'}</div>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2 py-0.5 rounded font-bold border ${getScoreColor(q.qualificationScore)}`}>
-                            {q.qualificationScore}/100
-                          </span>
-                          <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full ${q.qualificationScore >= 70 ? 'bg-emerald-500' : q.qualificationScore >= 40 ? 'bg-amber-500' : 'bg-rose-500'}`}
-                              style={{ width: `${Math.min(100, q.qualificationScore)}%` }}
-                            />
+      {/* Qualifications Content: Kanban View or Table View */}
+      {viewMode === 'kanban' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+          {[
+            {
+              id: 'in_progress',
+              title: 'In Discovery',
+              accentColor: 'border-t-blue-500',
+              badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
+              status: 'in_progress',
+            },
+            {
+              id: 'awaiting_information',
+              title: 'Awaiting Info',
+              accentColor: 'border-t-amber-500',
+              badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
+              status: 'awaiting_information',
+            },
+            {
+              id: 'ready_for_review',
+              title: 'Ready for Review',
+              accentColor: 'border-t-purple-500',
+              badgeClass: 'bg-purple-50 text-purple-700 border-purple-200',
+              status: 'ready_for_review',
+            },
+            {
+              id: 'qualified',
+              title: 'Qualified (SQL)',
+              accentColor: 'border-t-emerald-500',
+              badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+              status: 'qualified',
+            },
+          ].map((col) => {
+            const columnLeads = qualifications.filter((q) => q.qualificationStatus === col.status);
+
+            return (
+              <div
+                key={col.id}
+                className={`bg-surface rounded-2xl border border-border border-t-4 ${col.accentColor} p-3.5 shadow-2xs flex flex-col space-y-3 min-h-[320px]`}
+              >
+                {/* Column Header */}
+                <div className="flex items-center justify-between pb-2 border-b border-border">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs text-text">{col.title}</span>
+                  </div>
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${col.badgeClass}`}>
+                    {columnLeads.length}
+                  </span>
+                </div>
+
+                {/* Column Cards */}
+                <div className="space-y-2.5 flex-1">
+                  {columnLeads.length === 0 ? (
+                    <div className="py-12 text-center text-muted text-xs">
+                      No leads in this stage
+                    </div>
+                  ) : (
+                    columnLeads.map((q) => {
+                      const company = q.companyId || {};
+                      const contact = q.contactId || {};
+
+                      return (
+                        <div
+                          key={q._id}
+                          onClick={() => openLeadDetail(q._id)}
+                          className="bg-card p-3.5 rounded-xl border border-border hover:border-accent hover:shadow-sm transition-all cursor-pointer space-y-2.5 group"
+                        >
+                          <div className="flex items-start justify-between gap-1.5">
+                            <div className="min-w-0">
+                              <h4 className="font-bold text-text text-xs truncate group-hover:text-accent transition-colors">
+                                {company.companyName || 'Unknown Company'}
+                              </h4>
+                              <p className="text-[10px] text-text-secondary truncate mt-0.5">
+                                {company.industry || company.city || 'Lead Target'}
+                              </p>
+                            </div>
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border shrink-0 ${getScoreColor(q.qualificationScore)}`}>
+                              {q.qualificationScore}/100
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 pt-1 border-t border-border/50 text-xs">
+                            <div className="w-5 h-5 rounded-full bg-accent-soft text-accent font-bold text-[9px] flex items-center justify-center shrink-0">
+                              {(contact.contactName || 'E')[0]}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-medium text-text text-[11px] truncate">
+                                {contact.contactName || 'Executive'}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-[10px] text-muted">
+                              {q.lastInteractionAt ? new Date(q.lastInteractionAt).toLocaleDateString() : 'New'}
+                            </span>
+                            {q.qualificationStatus === 'qualified' && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenBookMeetingModal(q);
+                                }}
+                                className="px-2 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-bold hover:bg-emerald-700 transition flex items-center gap-1 shadow-2xs cursor-pointer"
+                              >
+                                <Calendar className="w-2.5 h-2.5" />
+                                Book Call
+                              </button>
+                            )}
                           </div>
                         </div>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {getRecommendationBadge(q.aiRecommendation)}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {getStatusBadge(q.qualificationStatus)}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-500">
-                        {q.lastInteractionAt ? new Date(q.lastInteractionAt).toLocaleDateString() : 'New'}
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {(q.qualificationStatus === 'qualified' || q.qualificationScore >= 70) && (
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* Qualifications List Table */
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          {loading ? (
+            <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-2">
+              <RefreshCw className="w-6 h-6 animate-spin text-emerald-600" />
+              <p className="text-sm">Loading qualification pipeline...</p>
+            </div>
+          ) : qualifications.length === 0 ? (
+            <div className="py-16 text-center text-slate-500">
+              <UserCheck className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+              <p className="text-sm font-medium">No leads currently match this filter.</p>
+              <p className="text-xs text-slate-400 mt-1">Leads enter qualification upon receiving positive Phase 2 replies or manual enrollment.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                    <th className="py-3 px-4">Company & Target</th>
+                    <th className="py-3 px-4">Decision Maker</th>
+                    <th className="py-3 px-4">AI Score</th>
+                    <th className="py-3 px-4">AI Recommendation</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4">Last Activity</th>
+                    <th className="py-3 px-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {qualifications.map((q) => {
+                    const company = q.companyId || {};
+                    const contact = q.contactId || {};
+                    return (
+                      <tr
+                        key={q._id}
+                        onClick={() => openLeadDetail(q._id)}
+                        className="hover:bg-slate-50/80 cursor-pointer transition"
+                      >
+                        <td className="py-3.5 px-4">
+                          <div className="font-semibold text-slate-900">{company.companyName || 'Unknown Company'}</div>
+                          <div className="text-[11px] text-slate-500">{company.industry || 'Industry N/A'} &bull; {company.city || company.country || ''}</div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="font-medium text-slate-800">{contact.contactName || 'Executive'}</div>
+                          <div className="text-[11px] text-slate-500">{contact.jobTitle || 'Decision Maker'}</div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded font-bold border ${getScoreColor(q.qualificationScore)}`}>
+                              {q.qualificationScore}/100
+                            </span>
+                            <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full ${q.qualificationScore >= 70 ? 'bg-emerald-500' : q.qualificationScore >= 40 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                                style={{ width: `${Math.min(100, q.qualificationScore)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {getRecommendationBadge(q.aiRecommendation)}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {getStatusBadge(q.qualificationStatus)}
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-500">
+                          {q.lastInteractionAt ? new Date(q.lastInteractionAt).toLocaleDateString() : 'New'}
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {(q.qualificationStatus === 'qualified' || q.qualificationScore >= 70) && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenBookMeetingModal(q);
+                                }}
+                                title="Book Sales Discovery Meeting"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded text-xs font-semibold transition"
+                              >
+                                <Calendar className="w-3 h-3 text-blue-600" />
+                                Book Call
+                              </button>
+                            )}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleOpenBookMeetingModal(q);
+                                openLeadDetail(q._id);
                               }}
-                              title="Book Sales Discovery Meeting"
-                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded text-xs font-semibold transition"
+                              className="inline-flex items-center gap-1 px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-medium transition"
                             >
-                              <Calendar className="w-3 h-3 text-blue-600" />
-                              Book Call
+                              Review &amp; Details <ChevronRight className="w-3 h-3" />
                             </button>
-                          )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openLeadDetail(q._id);
-                            }}
-                            className="inline-flex items-center gap-1 px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-medium transition"
-                          >
-                            Review &amp; Details <ChevronRight className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Review & Qualification Detail Modal */}
       {selectedLeadId && (

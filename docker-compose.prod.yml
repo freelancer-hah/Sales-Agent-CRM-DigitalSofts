@@ -1,0 +1,87 @@
+services:
+  # 1. Frontend Web App (UI + Inbound API Proxy)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sales-agent-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  # 2. Main Node.js Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sales-agent-backend
+    restart: always
+    environment:
+      - PORT=5003
+      - NODE_ENV=production
+      - MONGODB_URI=${MONGODB_URI}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - OVERPASS_API_URL=${OVERPASS_API_URL:-https://overpass-api.de/api/interpreter}
+      - SEARXNG_URL=http://searxng:8080
+      - GMAPS_SCRAPER_API_URL=http://gmaps-scraper:8080
+      - SCRAPER_SERVICE_URL=http://scraper:8000
+      - CAL_BASE_URL=${CAL_BASE_URL:-https://cal.com}
+      - CAL_CLOSER_SLUG=${CAL_CLOSER_SLUG:-abdulhannan-digitalsofts}
+      - CAL_EVENT_SLUG=${CAL_EVENT_SLUG:-30min}
+      - CAL_WEBHOOK_SECRET=${CAL_WEBHOOK_SECRET:-cal_webhook_secret_cybells_2026}
+      - SEND_MODE=${SEND_MODE:-sandbox}
+      - SANDBOX_INBOX=${SANDBOX_INBOX}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - IMAP_HOST=${IMAP_HOST}
+      - IMAP_PORT=${IMAP_PORT:-993}
+      - IMAP_USER=${IMAP_USER}
+      - IMAP_PASS=${IMAP_PASS}
+      - SENDER_NAME=${SENDER_NAME:-Hafiz from Cybells}
+      - SENDER_EMAIL=${SENDER_EMAIL}
+      - SENDER_POSTAL_ADDRESS=${SENDER_POSTAL_ADDRESS:-Lahore, Pakistan}
+      - APP_BASE_URL=${APP_BASE_URL:-http://localhost}
+      - UNSUBSCRIBE_SECRET=${UNSUBSCRIBE_SECRET:-cybells_secure_unsubscribe_token_secret_998877}
+      - DAILY_SEND_CAP=${DAILY_SEND_CAP:-25}
+      - MIN_DELAY_SECONDS=${MIN_DELAY_SECONDS:-60}
+      - MAX_DELAY_SECONDS=${MAX_DELAY_SECONDS:-180}
+    depends_on:
+      - scraper
+      - searxng
+      - gmaps-scraper
+
+  # 3. Python JobSpy & Web Crawler
+  scraper:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile
+    container_name: sales-agent-scraper
+    restart: always
+
+  # 4. SearXNG Metasearch Engine
+  searxng:
+    image: searxng/searxng:latest
+    container_name: sales-agent-searxng
+    restart: always
+    volumes:
+      - ./searxng:/etc/searxng:rw
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8080/
+
+  # 5. Google Maps Scraper
+  gmaps-scraper:
+    image: gosom/google-maps-scraper:latest
+    container_name: sales-agent-gmaps-scraper
+    restart: always
+    command: -data-folder /gmapsdata
+    volumes:
+      - gmaps_data:/gmapsdata
+
+volumes:
+  gmaps_data:

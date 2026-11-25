@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Database, Sparkles, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw } from 'lucide-react';
 import { NavTab, getWorkspaceForTab } from './Sidebar';
 
 interface NavbarProps {
@@ -23,12 +23,12 @@ const workspaceLabels: Record<string, string> = {
 
 const titles: Record<NavTab, { title: string; subtitle: string }> = {
   overview: {
-    title: 'Executive Sales Funnel & Metrics',
-    subtitle: 'Unified end-to-end performance across discovery, outreach, and bookings',
+    title: 'Dashboard Overview',
+    subtitle: 'Unified sales funnel metrics, discovery performance, and booked calls',
   },
   find: {
-    title: 'Discover Target Businesses',
-    subtitle: 'Live business scraping via Google Maps (Tier-1) & OpenStreetMap',
+    title: 'Find Leads & Companies',
+    subtitle: 'Discover targeted businesses via Google Maps & SearXNG with JobSpy hiring pain points',
   },
   companies: {
     title: 'All Discovered Companies',
@@ -51,31 +51,31 @@ const titles: Record<NavTab, { title: string; subtitle: string }> = {
     subtitle: 'Audit log and status of previous multi-source discovery queries',
   },
   settings: {
-    title: 'System & Scraper Settings',
-    subtitle: 'API keys, Google Maps microservice, and discovery engine configuration',
+    title: 'System & Integrations',
+    subtitle: 'MongoDB, Gemini API key, Scrapers (SearXNG/GMaps), and Cal.com configuration',
   },
   'lead-management': {
     title: 'Outreach Lead Management',
     subtitle: 'Enroll qualified companies and decision-makers into automated sequences',
   },
   'email-drafts': {
-    title: 'Personalized Email Drafts & Review',
-    subtitle: 'Review, edit, and approve Gemini-generated outreach messages prior to dispatch',
+    title: 'Outbound AI Email Drafts',
+    subtitle: 'Review, edit, and approve Gemini-crafted outreach messages with Cal.com booking link',
   },
   campaigns: {
     title: 'Campaign Sequences & Engine',
     subtitle: 'Manage multi-step automated sequences, delivery schedules, and sandbox safety',
   },
   inbox: {
-    title: 'Two-Way Inbox & Reply Intelligence',
-    subtitle: 'IMAP background sync, sentiment classification, and AI-assisted replies',
+    title: 'Inbound Inbox & AI Sentiment',
+    subtitle: 'Two-way email sync, AI intent classification, and 1-click meeting booking insertion',
   },
   'cybells-settings': {
     title: 'Cybells Agency Knowledge Base',
     subtitle: 'Agency capabilities, verified case studies, and email transport rules',
   },
   'suppression-list': {
-    title: 'Suppression & Do-Not-Contact Registry',
+    title: 'Suppression Registry',
     subtitle: 'Manage unsubscribed prospects, hard bounces, and manual exclusions',
   },
   qualifications: {
@@ -83,8 +83,8 @@ const titles: Record<NavTab, { title: string; subtitle: string }> = {
     subtitle: 'Evaluate prospect business systems, compute AI BANT scores, and convert SQLs',
   },
   meetings: {
-    title: 'Sales Meetings & Conversion Hub',
-    subtitle: 'Manage booked discovery sessions, closer dossiers, and live Google Meet links',
+    title: 'Pipeline & Sales Meetings',
+    subtitle: 'Manage booked discovery sessions, closer dossiers, and Cal.com appointments',
   },
 };
 
@@ -113,35 +113,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       <div className="flex items-center gap-2.5 sm:gap-3">
-        {/* Status Indicators */}
-        <div className="hidden md:flex items-center gap-2">
-          <div
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border shadow-2xs transition-all ${
-              dbConnected
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : 'bg-amber-50 text-amber-700 border-amber-200'
-            }`}
-            title={dbConnected ? 'MongoDB Connected' : 'MongoDB Not Connected'}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${dbConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-            <Database className="w-3.5 h-3.5" />
-            <span className="text-[11px]">{dbConnected ? 'MongoDB' : 'DB Disconnected'}</span>
-          </div>
-
-          <div
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border shadow-2xs transition-all ${
-              geminiConfigured
-                ? 'bg-accent-soft text-accent border-accent/20'
-                : 'bg-track text-muted border-border'
-            }`}
-            title={geminiConfigured ? 'Gemini 3.8 Flash Configured' : 'Configure GEMINI_API_KEY'}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${geminiConfigured ? 'bg-accent animate-pulse' : 'bg-muted'}`} />
-            <Sparkles className="w-3.5 h-3.5" />
-            <span className="text-[11px]">{geminiConfigured ? 'Gemini 3.8 AI' : 'AI Offline'}</span>
-          </div>
-        </div>
-
         {/* Refresh button */}
         {onRefresh && (
           <button
